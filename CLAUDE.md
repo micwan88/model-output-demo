@@ -18,6 +18,6 @@ This project is to making a Card Perso Preparation System for VISA/MASTER/DPAS c
 
 - .NET 8
 - C#
-- Target Run in Windows 11/ Windows Server 2025
+- Target Runnable in Windows 11/ Windows Server 2025/Linux
 
 ---
