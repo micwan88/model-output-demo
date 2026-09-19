@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TMD Emulator Story 1 Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --ground: #F2F5F3;
+  --surface: #FFFFFF;
+  --ink: #15201C;
+  --ink-2: #4A5A54;
+  --rule: #D5DED9;
+  --rule-strong: #B7C4BE;
+  --accent: #1C6B62;
+  --accent-soft: #E1EFEC;
+  --pass: #1F7A3A;
+  --pass-soft: #E3F2E6;
+  --warn: #9A5B00;
+  --warn-soft: #FBEFD9;
+  --fail: #B42318;
+  --code-bg: #E8EEEB;
+  --screen-bg: #000000;
+  --screen-frame: #2A3431;
+  --sans: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --cond: "IBM Plex Sans Condensed", "Arial Narrow", "IBM Plex Sans", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground: #0E1413;
+    --surface: #151D1B;
+    --ink: #DCE5E1;
+    --ink-2: #98A8A1;
+    --rule: #26322F;
+    --rule-strong: #3A4945;
+    --accent: #62C3B5;
+    --accent-soft: #16302C;
+    --pass: #6FCF8A;
+    --pass-soft: #15291C;
+    --warn: #E9B25A;
+    --warn-soft: #2E2413;
+    --fail: #F08A7E;
+    --code-bg: #1B2522;
+    --screen-frame: #3A4945;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #0E1413;
+  --surface: #151D1B;
+  --ink: #DCE5E1;
+  --ink-2: #98A8A1;
+  --rule: #26322F;
+  --rule-strong: #3A4945;
+  --accent: #62C3B5;
+  --accent-soft: #16302C;
+  --pass: #6FCF8A;
+  --pass-soft: #15291C;
+  --warn: #E9B25A;
+  --warn-soft: #2E2413;
+  --fail: #F08A7E;
+  --code-bg: #1B2522;
+  --screen-frame: #3A4945;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 400 16px/1.6 var(--sans);
+  padding-inline: 20px;
+  padding-block: 0 64px;
+}
+.page { max-width: 1000px; margin-inline: auto; }
+.col { max-width: 70ch; }
+
+h1, h2, h3 { font-family: var(--cond); font-weight: 600; text-wrap: balance; line-height: 1.2; margin: 0; }
+h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); letter-spacing: -0.01em; }
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.1rem; }
+p { margin: 0; }
+a { color: var(--accent); }
+a:focus-visible, input:focus-visible, label:focus-within, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+code, .mono { font-family: var(--mono); font-size: 0.88em; }
+:not(pre) > code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 3px; overflow-wrap: anywhere; }
+
+.label { font-family: var(--cond); font-weight: 500; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
+
+/* Header */
+header.doc { padding-block: 48px 28px; border-bottom: 1px solid var(--rule); display: grid; gap: 14px; }
+header.doc .lede { font-size: 1.1rem; color: var(--ink-2); max-width: 64ch; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 0.9rem; color: var(--ink-2); }
+.meta b { color: var(--ink); font-weight: 500; }
+.status-chip { display: inline-flex; align-items: center; gap: 6px; font-family: var(--cond); font-weight: 600; font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 9px; border-radius: 99px; background: var(--pass-soft); color: var(--pass); }
+
+/* Gauges */
+.gauges { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); margin-block: 28px 8px; }
+.gauge { background: var(--surface); padding: 14px 16px; display: grid; gap: 2px; align-content: start; }
+.gauge .v { font-family: var(--mono); font-size: 1.35rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+.gauge .s { font-size: 0.85rem; color: var(--ink-2); }
+.gauge.ok .v { color: var(--pass); }
+.gauge.pending .v { color: var(--warn); }
+
+section { padding-block: 40px 0; display: grid; gap: 16px; }
+section > h2 { display: flex; align-items: baseline; gap: 12px; }
+section > h2 .label { font-size: 0.75rem; }
+
+ul.plain { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; border: 1px solid var(--rule); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+th { font-family: var(--cond); font-weight: 600; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); background: var(--ground); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tick { color: var(--pass); font-weight: 600; white-space: nowrap; }
+.pend { color: var(--warn); font-weight: 600; white-space: nowrap; }
+td .mono, td code { overflow-wrap: anywhere; }
+
+/* Key material */
+dl.kv { margin: 0; display: grid; grid-template-columns: minmax(150px, max-content) 1fr; border: 1px solid var(--rule); background: var(--surface); }
+dl.kv dt, dl.kv dd { margin: 0; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+dl.kv dt { font-family: var(--cond); font-weight: 500; color: var(--ink-2); font-size: 0.9rem; }
+dl.kv dd { font-family: var(--mono); font-size: 0.85rem; overflow-wrap: anywhere; }
+dl.kv dt:last-of-type, dl.kv dd:last-of-type { border-bottom: 0; }
+.warnbox { border-left: 3px solid var(--warn); background: var(--warn-soft); padding: 10px 14px; font-size: 0.93rem; }
+
+pre.block { margin: 0; background: var(--code-bg); padding: 14px 16px; overflow-x: auto; font-family: var(--mono); font-size: 0.84rem; line-height: 1.55; }
+
+/* Terminal captures */
+.captures { display: grid; gap: 36px; }
+.capture { margin: 0; display: grid; gap: 8px; }
+.capture figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; align-items: baseline; }
+.cap-title { font-family: var(--cond); font-weight: 600; font-size: 1.05rem; }
+.cap-id { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-2); }
+.screen-wrap { overflow-x: auto; background: var(--screen-bg); border: 1px solid var(--screen-frame); border-radius: 6px; padding: 12px; }
+pre.screen { margin: 0; font-family: "Cascadia Mono", "IBM Plex Mono", ui-monospace, Consolas, monospace; font-size: 12px; line-height: 1.2; color: #FFFFFF; background: #000000; width: max-content; }
+.cap-note { font-size: 0.9rem; color: var(--ink-2); max-width: 75ch; }
+
+/* Checklist */
+.checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+.checklist li { background: var(--surface); }
+.checklist label { display: grid; grid-template-columns: auto 1fr; gap: 12px; padding: 11px 14px; cursor: pointer; }
+.checklist input { margin-top: 5px; accent-color: var(--accent); }
+.checklist .exp { display: block; color: var(--ink-2); font-size: 0.9rem; }
+.checklist input:checked + span { opacity: 0.6; }
+
+/* Quiz */
+.quiz { display: grid; gap: 18px; }
+fieldset.q { margin: 0; border: 1px solid var(--rule); background: var(--surface); padding: 16px 18px; display: grid; gap: 12px; }
+fieldset.q legend { padding: 0; font-weight: 500; float: left; width: 100%; }
+fieldset.q legend + * { clear: both; }
+.qn { font-family: var(--mono); font-size: 0.8rem; color: var(--accent); margin-right: 6px; }
+.opts { display: grid; gap: 6px; }
+.opt { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; padding: 7px 10px; border: 1px solid var(--rule); border-radius: 4px; cursor: pointer; font-size: 0.95rem; }
+.opt input { margin-top: 5px; accent-color: var(--accent); }
+.opt:hover { border-color: var(--rule-strong); }
+.q.checked .opt.correct { border-color: var(--pass); background: var(--pass-soft); }
+.q.checked .opt.wrong { border-color: var(--fail); }
+.why { font-size: 0.9rem; color: var(--ink-2); border-left: 3px solid var(--accent); padding-left: 12px; }
+.quiz-bar { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; }
+button { font: 600 0.95rem var(--cond); letter-spacing: 0.04em; text-transform: uppercase; padding: 9px 18px; border: 0; border-radius: 4px; background: var(--accent); color: var(--surface); cursor: pointer; }
+button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+#quiz-score { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+#quiz-score.pass { color: var(--pass); }
+#quiz-score.fail { color: var(--fail); }
+
+footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--rule); font-size: 0.85rem; color: var(--ink-2); }
+
+@media (max-width: 560px) {
+  dl.kv { grid-template-columns: 1fr; }
+  dl.kv dt { border-bottom: 0; padding-bottom: 0; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="doc">
+  <span class="label">Story 1 · rev 1 · Review report</span>
+  <h1>TMD Emulator: project, rich terminal shell, MZMK Initialization export</h1>
+  <p class="lede">A standalone .NET 8 emulator of the payShield Trusted Management Device, for internal development, testing and training. It stands in when no physical TMD can be booked.</p>
+  <div class="meta">
+    <span><span class="status-chip">Completed</span></span>
+    <span>Date <b>2026-09-19</b></span>
+    <span>Author <b>main</b></span>
+    <span>Inputs <b class="mono">story-1-r1.md</b>, <b class="mono">log-1.md</b></span>
+    <span>Plan <b class="mono">main-plan-1-r1.md</b></span>
+  </div>
+</header>
+
+<div class="gauges" role="list">
+  <div class="gauge ok" role="listitem"><span class="label">Build</span><span class="v">0 / 0</span><span class="s">warnings / errors, Release</span></div>
+  <div class="gauge ok" role="listitem"><span class="label">Unit tests</span><span class="v">141 / 141</span><span class="s">pass on .NET 8.0.31</span></div>
+  <div class="gauge ok" role="listitem"><span class="label">Coverage</span><span class="v">100%</span><span class="s">lines 453/453 · branches 99.5%</span></div>
+  <div class="gauge ok" role="listitem"><span class="label">Smoke test</span><span class="v">49 / 49</span><span class="s">real binary in a pty</span></div>
+  <div class="gauge pending" role="listitem"><span class="label">Win 11 run</span><span class="v">Pending</span><span class="s">manual check by you</span></div>
+</div>
+
+<section class="col">
+  <h2>What happened</h2>
+  <p>A new solution, <code>TMDEmulator/</code>, holds a console app and an xUnit test project, both targeting <code>net8.0</code>. The app opens a full-screen, two-frame terminal UI: a Main frame with a breadcrumb, and a Bottom status frame with the key legend and a message line. You move through the story's menu tree with ↑/↓, Enter and Esc.</p>
+  <p><b>Export MZMK Initialization Key</b> is the only working function. It shows the hardcoded secp256r1 test keypair, asks for an output directory, and writes <code>MZMK_Init_{fingerprint}{yyyyMMddHHmmss}.der</code>. The file contains the public key's SPKI as uppercase HEX. The other three functions are placeholder pages.</p>
+  <p>Every crypto value was checked against OpenSSL rather than against the code itself. The whole UI was driven end-to-end through a real pseudo-terminal. The one thing I couldn't do here is run the exe on Windows 11; the checklist below covers that.</p>
+</section>
+
+<section>
+  <h2>Story requirements, traced</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Requirement</th><th>Where it lives</th><th>Proven by</th><th>State</th></tr></thead>
+    <tbody>
+      <tr><td>New .NET project in <code>TMDEmulator/</code>, with a unit test project and VS project files</td><td><code>TMDEmulator.sln</code> (classic format), <code>src/TMDEmulator</code>, <code>tests/TMDEmulator.Tests</code></td><td>Build with SDK 8.0.131 and SDK 10.0.112</td><td class="tick">Done</td></tr>
+      <tr><td>Buildable with the dotnet CLI</td><td><code>dotnet build TMDEmulator.sln</code></td><td>V1: clean build, 0 warnings with warnings-as-errors on</td><td class="tick">Done</td></tr>
+      <tr><td>Rich colour terminal; ↑/↓ navigate, Enter select, Esc back</td><td><code>Tui/MenuScreen</code>, <code>Tui/App</code></td><td>MenuScreenTests, AppTests; smoke checks</td><td class="tick">Done</td></tr>
+      <tr><td>Two frames: Main, plus a Bottom status bar with the legend</td><td><code>Tui/ScreenFrame</code></td><td>ScreenFrameTests; captures below</td><td class="tick">Done</td></tr>
+      <tr><td>Black background, white text, grey highlight with black text; configurable</td><td><code>Tui/Theme</code>, <code>Config/ConfigLoader</code>, <code>appsettings.json</code></td><td>ThemeTests, ConfigLoaderTests; custom-colour smoke run</td><td class="tick">Done</td></tr>
+      <tr><td>Menu tree: Remote MZMK Setup (4 items), Key Management (2), Exit</td><td><code>Screens/MainMenu</code></td><td>MainMenuTests (exact labels); smoke walk</td><td class="tick">Done</td></tr>
+      <tr><td>Constant class holding a PKCS#8 PEM EC test keypair</td><td><code>Crypto/TestKeys</code></td><td>TestKeysTests</td><td class="tick">Done</td></tr>
+      <tr><td>Show curve type, private scalar (HEX) and public key (HEX)</td><td><code>Crypto/EcKeyInfo</code>, <code>Screens/ExportMzmkInitScreen</code></td><td>OpenSSL known answers for P-256, P-384 and P-521</td><td class="tick">Done</td></tr>
+      <tr><td>Ask for the output path; default to the absolute working directory</td><td><code>Tui/TextInput</code>, <code>Screens/PathValidator</code></td><td>ExportMzmkInitScreenTests; smoke</td><td class="tick">Done</td></tr>
+      <tr><td>8-character SHA-256 SPKI fingerprint; HEX content in a <code>.der</code> file; timestamped name</td><td><code>Crypto/KeyFingerprint</code>, <code>Crypto/MzmkInitExporter</code></td><td>Known answers; the smoke test compares the file byte-for-byte with OpenSSL's SPKI</td><td class="tick">Done</td></tr>
+      <tr><td>Ask before overwriting an existing file</td><td><code>Tui/ConfirmPrompt</code></td><td>Unit tests; smoke (No keeps the file, Yes replaces it)</td><td class="tick">Done</td></tr>
+      <tr><td>Validation and other errors in red on the status bar, under the legend</td><td><code>ScreenFrame</code> message line; <code>App</code> catches screen exceptions</td><td>Unit tests; smoke checks the red cell colour</td><td class="tick">Done</td></tr>
+      <tr><td>Placeholder pages: Finalize Remote MZMK, Uninstalling a MZMK, View Keys</td><td><code>Screens/PlaceholderScreen</code></td><td>Unit tests; smoke</td><td class="tick">Done</td></tr>
+      <tr><td>Deliverable is an exe that runs on Windows 11</td><td>Self-contained single-file <code>win-x64</code> publish</td><td>V4: valid 65.4 MB PE32+ x86-64 console exe</td><td class="pend">Run on Win 11 pending</td></tr>
+      <tr><td>Unit tests covering every class, utility and function</td><td>17 test classes, 141 tests (the small model records and config POCOs are tested alongside their users)</td><td>100% of lines; <code>Program</code> and <code>SystemTerminal</code> excluded as I/O shims</td><td class="tick">Done</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>The embedded test key</h2>
+  <div class="warnbox col"><b>Test only.</b> This keypair is committed to source control, as the story allows. It must never be loaded into a production HSM or used for real key exchange.</div>
+  <dl class="kv">
+    <dt>Curve type</dt><dd>NIST P-256 (secp256r1) - OID 1.2.840.10045.3.1.7</dd>
+    <dt>Private key (d)</dt><dd>8FBF1ABE22F5C13636E5251CA9BA5810C0DE45035EFA0DD6FCD3206C7AD7E4DB</dd>
+    <dt>Public key (04‖X‖Y)</dt><dd>04B4ECF81BA1D75CA8C095BC9EC235EBB2099AB40B2E30A3F9AE29972753D1D152E5646A19951794563BDEBDFF4CDECCF1FC1622D43DA0790ACBD855C1C4679BB1</dd>
+    <dt>SPKI DER, i.e. file content</dt><dd>3059301306072A8648CE3D020106082A8648CE3D03010703420004B4EC…C4679BB1 (182 hex characters, no newline)</dd>
+    <dt>Short fingerprint</dt><dd>41E021BF = first 8 hex characters of SHA-256(SPKI DER)</dd>
+    <dt>Example file name</dt><dd>MZMK_Init_41E021BF20260919143005.der</dd>
+  </dl>
+</section>
+
+<section>
+  <h2>What it looks like</h2>
+  <p class="col">These are real captures of the built binary running in a 100×30 pseudo-terminal, rendered cell by cell with the colours it emitted. Windows Terminal will draw the same layout in its own palette.</p>
+  <div class="captures">
+<figure class="capture">
+  <figcaption><span class="cap-title">Startup: root menu</span><span class="cap-id">01-startup.txt · 100×30</span></figcaption>
+  <div class="screen-wrap"><pre class="screen" role="img" aria-label="Terminal capture: Startup: root menu"><span style="color:#7f7f7f">╭─ </span><span style="color:#ffffff">TMD Emulator</span><span style="color:#7f7f7f"> ───────────────────────────────────────────────────────────────────────────────────╮</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#000000;background:#e5e5e5">&gt; 1. Remote MZMK Setup                                                                          </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">  2. Key Management                                                                             </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">  3. Exit                                                                                       </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">╰──────────────────────────────────────────────────────────────────────────────────────────────────╯</span>
+<span style="color:#7f7f7f">╭──────────────────────────────────────────────────────────────────────────────────────────────────╮</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">↑/↓ Navigate · Enter Select                                                                     </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">╰──────────────────────────────────────────────────────────────────────────────────────────────────╯</span></pre></div>
+  <p class="cap-note">The selected row is filled across the Main frame in grey with black text. The Bottom frame carries the legend; Esc isn&#x27;t listed because it does nothing on the root menu.</p>
+</figure>
+<figure class="capture">
+  <figcaption><span class="cap-title">Export MZMK Initialization Key</span><span class="cap-id">03-export-screen.txt · 100×30</span></figcaption>
+  <div class="screen-wrap"><pre class="screen" role="img" aria-label="Terminal capture: Export MZMK Initialization Key"><span style="color:#7f7f7f">╭─ </span><span style="color:#ffffff">TMD Emulator › Remote MZMK Setup › Export MZMK Initialization Key</span><span style="color:#7f7f7f"> ──────────────────────────────╮</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">MZMK Initialization keypair (internal TEST key)                                                 </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">Curve type : NIST P-256 (secp256r1) - OID 1.2.840.10045.3.1.7                                   </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">Private key (HEX scalar):                                                                       </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">8FBF1ABE22F5C13636E5251CA9BA5810C0DE45035EFA0DD6FCD3206C7AD7E4DB                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">Public key (HEX):                                                                               </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">04B4ECF81BA1D75CA8C095BC9EC235EBB2099AB40B2E30A3F9AE29972753D1D152E5646A19951794563BDEBDFF4CDECC</span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">F1FC1622D43DA0790ACBD855C1C4679BB1                                                              </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">Output directory for the MZMK Initialization file:                                              </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">&gt; /tmp/claude-1000/-micwan-workspaces-ai-work-opus-output-demo/30b9a100-46aa-46db-be37-5c5fd27fe</span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">12c/scratchpad/smoke/out</span><span style="color:#000000;background:#e5e5e5"> </span><span style="color:#ffffff">                                                                       </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">╰──────────────────────────────────────────────────────────────────────────────────────────────────╯</span>
+<span style="color:#7f7f7f">╭──────────────────────────────────────────────────────────────────────────────────────────────────╮</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">Enter Save · Esc Back · ←/→ Home/End Move cursor                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">╰──────────────────────────────────────────────────────────────────────────────────────────────────╯</span></pre></div>
+  <p class="cap-note">The curve is read from the PKCS#8 key. The 130-character public point wraps inside the frame. The path is pre-filled with the absolute working directory, and the grey block is the caret.</p>
+</figure>
+<figure class="capture">
+  <figcaption><span class="cap-title">Validation error</span><span class="cap-id">04-validation-empty.txt · 100×30</span></figcaption>
+  <div class="screen-wrap"><pre class="screen" role="img" aria-label="Terminal capture: Validation error"><span style="color:#7f7f7f">╭─ </span><span style="color:#ffffff">TMD Emulator › Remote MZMK Setup › Export MZMK Initialization Key</span><span style="color:#7f7f7f"> ──────────────────────────────╮</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">MZMK Initialization keypair (internal TEST key)                                                 </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">Curve type : NIST P-256 (secp256r1) - OID 1.2.840.10045.3.1.7                                   </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">Private key (HEX scalar):                                                                       </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">8FBF1ABE22F5C13636E5251CA9BA5810C0DE45035EFA0DD6FCD3206C7AD7E4DB                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">Public key (HEX):                                                                               </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">04B4ECF81BA1D75CA8C095BC9EC235EBB2099AB40B2E30A3F9AE29972753D1D152E5646A19951794563BDEBDFF4CDECC</span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">F1FC1622D43DA0790ACBD855C1C4679BB1                                                              </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">Output directory for the MZMK Initialization file:                                              </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">&gt; </span><span style="color:#000000;background:#e5e5e5"> </span><span style="color:#ffffff">                                                                                             </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">╰──────────────────────────────────────────────────────────────────────────────────────────────────╯</span>
+<span style="color:#7f7f7f">╭──────────────────────────────────────────────────────────────────────────────────────────────────╮</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">Enter Save · Esc Back · ←/→ Home/End Move cursor                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ff0000">Output path is required.</span><span style="color:#ffffff">                                                                        </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">╰──────────────────────────────────────────────────────────────────────────────────────────────────╯</span></pre></div>
+  <p class="cap-note">An empty path is rejected. The error is red, on the message line directly under the legend.</p>
+</figure>
+<figure class="capture">
+  <figcaption><span class="cap-title">Overwrite confirmation</span><span class="cap-id">07-overwrite-prompt.txt · 100×30</span></figcaption>
+  <div class="screen-wrap"><pre class="screen" role="img" aria-label="Terminal capture: Overwrite confirmation"><span style="color:#7f7f7f">╭─ </span><span style="color:#ffffff">TMD Emulator › Remote MZMK Setup › Export MZMK Initialization Key</span><span style="color:#7f7f7f"> ──────────────────────────────╮</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">MZMK Initialization keypair (internal TEST key)                                                 </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">Curve type : NIST P-256 (secp256r1) - OID 1.2.840.10045.3.1.7                                   </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">Private key (HEX scalar):                                                                       </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">8FBF1ABE22F5C13636E5251CA9BA5810C0DE45035EFA0DD6FCD3206C7AD7E4DB                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">Public key (HEX):                                                                               </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">04B4ECF81BA1D75CA8C095BC9EC235EBB2099AB40B2E30A3F9AE29972753D1D152E5646A19951794563BDEBDFF4CDECC</span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">F1FC1622D43DA0790ACBD855C1C4679BB1                                                              </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">Output directory for the MZMK Initialization file:                                              </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">&gt; target</span><span style="color:#000000;background:#e5e5e5"> </span><span style="color:#ffffff">                                                                                       </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">File already exists: MZMK_Init_41E021BF20260919211104.der. Overwrite?                           </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">    Yes    </span><span style="color:#000000;background:#e5e5e5">  No  </span><span style="color:#ffffff">                                                                               </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">╰──────────────────────────────────────────────────────────────────────────────────────────────────╯</span>
+<span style="color:#7f7f7f">╭──────────────────────────────────────────────────────────────────────────────────────────────────╮</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">←/→ Choose · Enter Confirm · Esc Cancel                                                         </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">╰──────────────────────────────────────────────────────────────────────────────────────────────────╯</span></pre></div>
+  <p class="cap-note">Shown only when the timestamped file name already exists. No is the default; ←/→ switches.</p>
+</figure>
+<figure class="capture">
+  <figcaption><span class="cap-title">Saved, back on the Remote MZMK Setup menu</span><span class="cap-id">06-saved.txt · 100×30</span></figcaption>
+  <div class="screen-wrap"><pre class="screen" role="img" aria-label="Terminal capture: Saved, back on the Remote MZMK Setup menu"><span style="color:#7f7f7f">╭─ </span><span style="color:#ffffff">TMD Emulator › Remote MZMK Setup</span><span style="color:#7f7f7f"> ───────────────────────────────────────────────────────────────╮</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#000000;background:#e5e5e5">&gt; 1. Export MZMK Initialization Key                                                             </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">  2. Finalize Remote MZMK                                                                       </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">  3. Uninstalling a MZMK                                                                        </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">  4. Back                                                                                       </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">                                                                                                </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">╰──────────────────────────────────────────────────────────────────────────────────────────────────╯</span>
+<span style="color:#7f7f7f">╭──────────────────────────────────────────────────────────────────────────────────────────────────╮</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#ffffff">↑/↓ Navigate · Enter Select · Esc Back                                                          </span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">│ </span><span style="color:#00cd00">Saved: /tmp/claude-1000/-micwan-workspaces-ai-work-opus-output-demo/30b9a100-46aa-46db-be37-5c5…</span><span style="color:#7f7f7f"> │</span>
+<span style="color:#7f7f7f">╰──────────────────────────────────────────────────────────────────────────────────────────────────╯</span></pre></div>
+  <p class="cap-note">The success message is green. Long paths are truncated with … to fit the status bar; the file itself is written in full.</p>
+</figure>
+<figure class="capture">
+  <figcaption><span class="cap-title">Colours from appsettings.json</span><span class="cap-id">11-custom-colours.txt · 100×30</span></figcaption>
+  <div class="screen-wrap"><pre class="screen" role="img" aria-label="Terminal capture: Colours from appsettings.json"><span style="color:#7f7f7f;background:#0000ee">╭─ </span><span style="color:#ffffff;background:#0000ee">TMD Emulator</span><span style="color:#7f7f7f;background:#0000ee"> ───────────────────────────────────────────────────────────────────────────────────╮</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ffffff;background:#0000ee">                                                                                                </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#000000;background:#ffd700">&gt; 1. Remote MZMK Setup                                                                          </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ffffff;background:#0000ee">  2. Key Management                                                                             </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ffffff;background:#0000ee">  3. Exit                                                                                       </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ffffff;background:#0000ee">                                                                                                </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ffffff;background:#0000ee">                                                                                                </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ffffff;background:#0000ee">                                                                                                </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ffffff;background:#0000ee">                                                                                                </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ffffff;background:#0000ee">                                                                                                </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ffffff;background:#0000ee">                                                                                                </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ffffff;background:#0000ee">                                                                                                </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ffffff;background:#0000ee">                                                                                                </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ffffff;background:#0000ee">                                                                                                </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ffffff;background:#0000ee">                                                                                                </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ffffff;background:#0000ee">                                                                                                </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ffffff;background:#0000ee">                                                                                                </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ffffff;background:#0000ee">                                                                                                </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ffffff;background:#0000ee">                                                                                                </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ffffff;background:#0000ee">                                                                                                </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ffffff;background:#0000ee">                                                                                                </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ffffff;background:#0000ee">                                                                                                </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ffffff;background:#0000ee">                                                                                                </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ffffff;background:#0000ee">                                                                                                </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ffffff;background:#0000ee">                                                                                                </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">╰──────────────────────────────────────────────────────────────────────────────────────────────────╯</span>
+<span style="color:#7f7f7f;background:#0000ee">╭──────────────────────────────────────────────────────────────────────────────────────────────────╮</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ffffff">↑/↓ Navigate · Enter Select                                                                     </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">│ </span><span style="color:#ff0000">Invalid colour in config for Theme.Foreground; default used.</span><span style="color:#ffffff">                                    </span><span style="color:#7f7f7f;background:#0000ee"> │</span>
+<span style="color:#7f7f7f;background:#0000ee">╰──────────────────────────────────────────────────────────────────────────────────────────────────╯</span></pre></div>
+  <p class="cap-note">Background navy and highlight #FFD700, with one invalid value (Foreground: &quot;nope&quot;). That key falls back to its default, and a red warning names it.</p>
+</figure>
+  </div>
+</section>
+
+<section class="col">
+  <h2>Decisions and deviations</h2>
+  <p>The answers to Q1–Q5 in <code>log-1.md</code> were applied as written. Beyond those:</p>
+  <ul class="plain">
+    <li><b>The curve is parsed from the PKCS#8 key</b> (log-1 Q1). It's read from the AlgorithmIdentifier OID with <code>AsnReader</code>, so Windows and Linux give the same answer. RSA keys, SEC1 <code>EC PRIVATE KEY</code> PEMs and explicit-parameter curves are rejected with a clear message.</li>
+    <li><b>Added: redraw coalescing.</b> The smoke test showed a full redraw (8.4 ms, 3.4 KB) for every key, so a pasted path redrew once per character. The app now handles all queued keys before drawing.</li>
+    <li><b>Added: a non-interactive guard.</b> With redirected stdin/stdout, the app prints a message and exits with code 1 instead of throwing.</li>
+    <li><b>Fixed, found by the smoke test:</b> the malformed-config warning started with the full file path, so the real reason was truncated off the status bar. It now begins <code>appsettings.json could not be read</code>.</li>
+    <li><b>Config fallback is per key.</b> One bad colour only resets that key. There is an extra <code>Border</code> key for the frame lines.</li>
+    <li><b>Removed a padding helper</b> I had planned. .NET already exports fixed-length EC coordinates, which the P-521 key with a leading <code>00</code> proves.</li>
+    <li><b>Names differ slightly from the plan:</b> <code>ITerminal</code>/<code>SystemTerminal</code> instead of <code>IConsoleIO</code>, and the status bar lives inside <code>ScreenFrame</code>. The full list is in the plan.</li>
+  </ul>
+</section>
+
+<section class="col">
+  <h2>Not done, or left for you</h2>
+  <ul class="plain">
+    <li><b>Running on Windows 11 is unverified.</b> I could only cross-publish and check the PE header from Linux. Please run the checklist below.</li>
+    <li><b>Nothing committed.</b> All changes are in the working tree for your review. I will commit only when you ask.</li>
+    <li><b>Out of scope</b> (story or A22): the Finalize, Uninstall and View Keys logic; key storage; logging.</li>
+    <li><code>.agents/assets/file-structure.md</code> is unchanged (A23).</li>
+  </ul>
+</section>
+
+<section class="col">
+  <h2>Windows 11 check <span class="label">about 5 minutes</span></h2>
+  <p>Publish, then copy <code>TMDEmulator.exe</code> and <code>appsettings.json</code> to a folder on the Win 11 machine. The ticks here are only for your own use and aren't saved.</p>
+  <ul class="checklist">
+    <li><label for="w1"><input type="checkbox" id="w1"><span>Open <b>Windows Terminal</b>, <code>cd</code> to any folder, and run the exe by its full path<span class="exp">Expected: black screen, rounded frame borders (no "?" glyphs), grey highlighted row, and the legend at the bottom.</span></span></label></li>
+    <li><label for="w2"><input type="checkbox" id="w2"><span>Press ↑/↓ and Enter, Esc inside a submenu, then Esc on the root menu<span class="exp">Expected: the highlight moves and wraps; Esc goes back; Esc on the root menu does nothing.</span></span></label></li>
+    <li><label for="w3"><input type="checkbox" id="w3"><span>Open Export MZMK Initialization Key and press Enter on the default path<span class="exp">Expected: green "Saved: …" message; a file named <code>MZMK_Init_41E021BF&lt;local time&gt;.der</code> in the folder you started from, whose content begins <code>3059301306072A8648CE3D</code>.</span></span></label></li>
+    <li><label for="w4"><input type="checkbox" id="w4"><span>Enter <code>C:\does\not\exist</code>, then <code>C:\Windows\System32</code> (as a non-admin user)<span class="exp">Expected: a red "Directory does not exist" message, then a red "Failed to save file: …" access error. The app keeps running.</span></span></label></li>
+    <li><label for="w5"><input type="checkbox" id="w5"><span>Paste a long path with Ctrl+V into the path field<span class="exp">Expected: it appears almost at once, without a visible redraw per character.</span></span></label></li>
+    <li><label for="w6"><input type="checkbox" id="w6"><span>Shrink the window below 80×24, then enlarge it again<span class="exp">Expected: the red "Terminal too small" notice, then the UI returns intact.</span></span></label></li>
+    <li><label for="w7"><input type="checkbox" id="w7"><span>Run it in the classic console host: <code>conhost.exe TMDEmulator.exe</code><span class="exp">Expected: same layout, and the bottom-right corner doesn't scroll the screen or flicker. This is the riskiest Windows behaviour.</span></span></label></li>
+    <li><label for="w8"><input type="checkbox" id="w8"><span>Quit with Ctrl+C, and again through the Exit item<span class="exp">Expected: the previous terminal contents come back, the cursor is visible, and the prompt is usable.</span></span></label></li>
+  </ul>
+</section>
+
+<section>
+  <h2>Build, run, test</h2>
+  <pre class="block"># Build (any .NET 8+ SDK)
+dotnet build TMDEmulator/TMDEmulator.sln -c Release
+
+# Unit tests with coverage (on this machine use the .NET 8 SDK host, see main-kb-1-r1.md)
+/snap/dotnet-sdk-80/current/usr/lib/dotnet/dotnet test TMDEmulator/TMDEmulator.sln -c Release --collect:"XPlat Code Coverage"
+
+# Win 11 deliverable: self-contained single-file exe with appsettings.json beside it
+dotnet publish TMDEmulator/src/TMDEmulator -c Release -r win-x64 -o publish/win-x64</pre>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Package</th><th>Version</th><th>Used by</th><th>Licence</th></tr></thead>
+    <tbody>
+      <tr><td>Spectre.Console</td><td class="num">0.57.2</td><td>App: colour, terminal capabilities, rendering</td><td>MIT</td></tr>
+      <tr><td>Spectre.Console.Testing</td><td class="num">0.57.2</td><td>Tests: TestConsole</td><td>MIT</td></tr>
+      <tr><td>xunit</td><td class="num">2.9.3</td><td>Tests</td><td>Apache-2.0</td></tr>
+      <tr><td>xunit.runner.visualstudio</td><td class="num">4.0.0</td><td>Tests: runner</td><td>Apache-2.0</td></tr>
+      <tr><td>Microsoft.NET.Test.Sdk</td><td class="num">18.10.1</td><td>Tests</td><td>MIT</td></tr>
+      <tr><td>coverlet.collector</td><td class="num">10.0.1</td><td>Tests: coverage</td><td>MIT</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Verification evidence</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Check</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>V1 Clean Release build (SDK 8.0.131)</td><td class="tick">0 warnings, 0 errors. SDK 10.0.112 builds as well.</td></tr>
+      <tr><td>V2 Unit tests, .NET 8.0.31 runtime</td><td class="tick">141 pass; lines 453/453, branches 204/205</td></tr>
+      <tr><td>V2 Mutation check (lowercase fingerprint; strip the P-521 leading zero)</td><td class="tick">13 tests failed as expected, then restored</td></tr>
+      <tr><td>V3 OpenSSL 3.5.5 known answers (P-256, P-384, P-521)</td><td class="tick">Fingerprint, SPKI, d and Q all match</td></tr>
+      <tr><td>V4 <code>publish -r win-x64</code></td><td class="tick">PE32+ console x86-64, 68,626,732 bytes, <code>appsettings.json</code> beside it</td></tr>
+      <tr><td>V5 Interactive pty smoke test (Python pty + pyte)</td><td class="tick">49 / 49 checks</td></tr>
+      <tr><td>V6 Windows 11 manual run</td><td class="pend">Pending: checklist above</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="col">The one uncovered branch is in <code>ScreenFrame.Wrap</code>: a single double-width character wider than the whole frame. That can't happen at the enforced 80-column minimum.</p>
+</section>
+
+<section class="col" aria-labelledby="quiz-h">
+  <h2 id="quiz-h">Quiz <span class="label">8 questions · pass mark: all correct</span></h2>
+  <p>Answer every question, then check. Each answer comes with an explanation.</p>
+  <form class="quiz" id="quiz" novalidate>
+<fieldset class="q" data-answer="1">
+  <legend><span class="qn">Q1</span> What exactly is written inside <code>MZMK_Init_41E021BF…der</code>?</legend>
+  <div class="opts"><label class="opt" for="q0o0"><input type="radio" name="q0" id="q0o0" value="0"><span>The binary SubjectPublicKeyInfo DER, as the extension suggests</span></label>
+<label class="opt" for="q0o1"><input type="radio" name="q0" id="q0o1" value="1"><span>The SubjectPublicKeyInfo DER as uppercase HEX text: ASCII, one line, no trailing newline</span></label>
+<label class="opt" for="q0o2"><input type="radio" name="q0" id="q0o2" value="2"><span>The uncompressed public point 04‖X‖Y in hex</span></label>
+<label class="opt" for="q0o3"><input type="radio" name="q0" id="q0o3" value="3"><span>The PKCS#8 PEM of the keypair</span></label></div>
+  <p class="why" hidden>Story rule: HEX text despite the .der extension (a TMD convention). The on-screen "Public key (HEX)" is the raw point, which is a different value from the file content.</p>
+</fieldset>
+<fieldset class="q" data-answer="2">
+  <legend><span class="qn">Q2</span> How is the 8-character fingerprint in the file name produced?</legend>
+  <div class="opts"><label class="opt" for="q1o0"><input type="radio" name="q1" id="q1o0" value="0"><span>The first 8 hex characters of SHA-256 over the private key</span></label>
+<label class="opt" for="q1o1"><input type="radio" name="q1" id="q1o1" value="1"><span>The last 4 bytes of the public X coordinate</span></label>
+<label class="opt" for="q1o2"><input type="radio" name="q1" id="q1o2" value="2"><span>The first 8 uppercase hex characters of SHA-256 over the SPKI DER bytes</span></label>
+<label class="opt" for="q1o3"><input type="radio" name="q1" id="q1o3" value="3"><span>A CRC-32 of the HEX file content</span></label></div>
+  <p class="why" hidden>SHA-256(SPKI DER) → hex, uppercase, first 8 characters. For the test key this is 41E021BF, which matches sha256sum from OpenSSL.</p>
+</fieldset>
+<fieldset class="q" data-answer="1">
+  <legend><span class="qn">Q3</span> Where does the "Curve type" shown on screen come from?</legend>
+  <div class="opts"><label class="opt" for="q2o0"><input type="radio" name="q2" id="q2o0" value="0"><span>It's hardcoded as P-256 in the screen</span></label>
+<label class="opt" for="q2o1"><input type="radio" name="q2" id="q2o1" value="1"><span>It's parsed from the named-curve OID inside the PKCS#8 AlgorithmIdentifier</span></label>
+<label class="opt" for="q2o2"><input type="radio" name="q2" id="q2o2" value="2"><span>It's read from appsettings.json</span></label>
+<label class="opt" for="q2o3"><input type="radio" name="q2" id="q2o3" value="3"><span>It's whatever .NET reports as the curve's FriendlyName</span></label></div>
+  <p class="why" hidden>log-1 Q1: the curve depends on the key's content. The OID is read with AsnReader, which gives the same result on every OS. FriendlyName differs between Windows CNG and OpenSSL.</p>
+</fieldset>
+<fieldset class="q" data-answer="2">
+  <legend><span class="qn">Q4</span> A tester types a directory that doesn't exist and presses Enter. What happens?</legend>
+  <div class="opts"><label class="opt" for="q3o0"><input type="radio" name="q3" id="q3o0" value="0"><span>The directory is created and the file saved</span></label>
+<label class="opt" for="q3o1"><input type="radio" name="q3" id="q3o1" value="1"><span>The file is saved in the working directory instead</span></label>
+<label class="opt" for="q3o2"><input type="radio" name="q3" id="q3o2" value="2"><span>A red "Directory does not exist: …" message appears; nothing is created or saved</span></label>
+<label class="opt" for="q3o3"><input type="radio" name="q3" id="q3o3" value="3"><span>The app returns to the menu</span></label></div>
+  <p class="why" hidden>Assumption A8: the tool never auto-creates directories. Every validation error stays on the page, in red on the status bar.</p>
+</fieldset>
+<fieldset class="q" data-answer="2">
+  <legend><span class="qn">Q5</span> appsettings.json contains <code>"Foreground": "nope"</code> and <code>"Background": "navy"</code>. What does the app do?</legend>
+  <div class="opts"><label class="opt" for="q4o0"><input type="radio" name="q4" id="q4o0" value="0"><span>It refuses to start</span></label>
+<label class="opt" for="q4o1"><input type="radio" name="q4" id="q4o1" value="1"><span>It ignores the whole file and uses all defaults silently</span></label>
+<label class="opt" for="q4o2"><input type="radio" name="q4" id="q4o2" value="2"><span>It uses navy for the background, the default white for the foreground, and shows a red warning naming Theme.Foreground</span></label>
+<label class="opt" for="q4o3"><input type="radio" name="q4" id="q4o3" value="3"><span>It crashes on first draw</span></label></div>
+  <p class="why" hidden>Invalid values fall back per key; valid keys still apply. A malformed file falls back entirely, also with a warning. A missing file is silent.</p>
+</fieldset>
+<fieldset class="q" data-answer="1">
+  <legend><span class="qn">Q6</span> What does Esc do on the top-level menu?</legend>
+  <div class="opts"><label class="opt" for="q5o0"><input type="radio" name="q5" id="q5o0" value="0"><span>It exits the program</span></label>
+<label class="opt" for="q5o1"><input type="radio" name="q5" id="q5o1" value="1"><span>Nothing – exit is through the Exit menu item (or Ctrl+C)</span></label>
+<label class="opt" for="q5o2"><input type="radio" name="q5" id="q5o2" value="2"><span>It opens a confirm-exit prompt</span></label>
+<label class="opt" for="q5o3"><input type="radio" name="q5" id="q5o3" value="3"><span>It goes to Key Management</span></label></div>
+  <p class="why" hidden>Assumption A11. The root legend omits "Esc Back" for this reason.</p>
+</fieldset>
+<fieldset class="q" data-answer="1">
+  <legend><span class="qn">Q7</span> On this build machine, why do the tests fail to run with plain <code>dotnet test</code>?</legend>
+  <div class="opts"><label class="opt" for="q6o0"><input type="radio" name="q6" id="q6o0" value="0"><span>The tests target .NET 10</span></label>
+<label class="opt" for="q6o1"><input type="radio" name="q6" id="q6o1" value="1"><span>The default dotnet is the SDK 10 snap, whose host can't see the .NET 8 runtime installed in a separate snap</span></label>
+<label class="opt" for="q6o2"><input type="radio" name="q6" id="q6o2" value="2"><span>NuGet is unreachable</span></label>
+<label class="opt" for="q6o3"><input type="radio" name="q6" id="q6o3" value="3"><span>xunit.runner.visualstudio 4.0 doesn't support xUnit v2</span></label></div>
+  <p class="why" hidden>Build with either SDK; run the tests with /snap/dotnet-sdk-80/current/usr/lib/dotnet/dotnet. This is recorded in main-kb-1-r1.md.</p>
+</fieldset>
+<fieldset class="q" data-answer="1">
+  <legend><span class="qn">Q8</span> Why does the app skip redrawing while keys are still queued?</legend>
+  <div class="opts"><label class="opt" for="q7o0"><input type="radio" name="q7" id="q7o0" value="0"><span>To hide the private key from screen recorders</span></label>
+<label class="opt" for="q7o1"><input type="radio" name="q7" id="q7o1" value="1"><span>So a pasted path costs one redraw instead of one full-screen redraw per character</span></label>
+<label class="opt" for="q7o2"><input type="radio" name="q7" id="q7o2" value="2"><span>Because Spectre.Console requires it</span></label>
+<label class="opt" for="q7o3"><input type="radio" name="q7" id="q7o3" value="3"><span>To stop Esc being read as the start of an escape sequence</span></label></div>
+  <p class="why" hidden>The smoke test measured 8.4 ms and 3.4 KB per key before the change. A 200-key burst now costs a single redraw.</p>
+</fieldset>
+    <div class="quiz-bar">
+      <button type="submit" id="quiz-check">Check answers</button>
+      <button type="button" class="secondary" id="quiz-reset">Reset</button>
+      <span id="quiz-score" aria-live="polite"></span>
+    </div>
+  </form>
+</section>
+
+<footer>Generated by main for story-1-r1 · captures from the V5 smoke run · 2026-09-19</footer>
+</div>
+
+<script>
+(function () {
+  var form = document.getElementById('quiz');
+  var score = document.getElementById('quiz-score');
+  var questions = Array.prototype.slice.call(form.querySelectorAll('fieldset.q'));
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var right = 0, answered = 0;
+    questions.forEach(function (q) {
+      var answer = q.getAttribute('data-answer');
+      var picked = q.querySelector('input:checked');
+      q.classList.add('checked');
+      q.querySelectorAll('.opt').forEach(function (opt) {
+        var input = opt.querySelector('input');
+        opt.classList.toggle('correct', input.value === answer);
+        opt.classList.toggle('wrong', input.checked && input.value !== answer);
+      });
+      q.querySelector('.why').hidden = false;
+      if (picked) { answered++; if (picked.value === answer) right++; }
+    });
+    var passed = right === questions.length;
+    score.className = passed ? 'pass' : 'fail';
+    score.textContent = right + ' / ' + questions.length + ' correct' +
+      (answered < questions.length ? ' (' + (questions.length - answered) + ' unanswered)' : '') +
+      (passed ? ' - passed' : ' - not yet; review the explanations and try again');
+  });
+  document.getElementById('quiz-reset').addEventListener('click', function () {
+    form.reset();
+    score.textContent = '';
+    questions.forEach(function (q) {
+      q.classList.remove('checked');
+      q.querySelector('.why').hidden = true;
+      q.querySelectorAll('.opt').forEach(function (o) { o.classList.remove('correct', 'wrong'); });
+    });
+  });
+})();
+</script>
+</body>
+</html>
