@@ -1,0 +1,9 @@
+{
+  "colors": {
+    "background": "Black",
+    "text": "White",
+    "highlightBackground": "Gray",
+    "highlightText": "Black",
+    "error": "Red"
+  }
+}

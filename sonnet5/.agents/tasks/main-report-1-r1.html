@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Report: TMD Emulator, story 1 r1</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1c2024; --muted: #5b6672; --line: #d9dee3; --card: #f6f8fa;
+    --accent: #0b5cad; --ok: #1a7f37; --bad: #c62828; --warn: #9a6700;
+    --term-bg: #000000; --term-fg: #e6e6e6; --term-hl-bg: #c0c0c0; --term-hl-fg: #000000; --term-red: #ff5555;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12161a; --fg: #e6e9ec; --muted: #9aa5b1; --line: #2c343c; --card: #1a2027;
+      --accent: #6cb2ff; --ok: #4cc26b; --bad: #ff7b72; --warn: #e3b341;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 880px; margin: 0 auto; padding: 24px 16px 80px; }
+  h1 { font-size: 1.7rem; margin: 0 0 4px; }
+  h2 { font-size: 1.25rem; margin: 40px 0 10px; padding-top: 12px; border-top: 1px solid var(--line); }
+  h3 { font-size: 1.02rem; margin: 22px 0 6px; }
+  p, li { max-width: 72ch; }
+  .meta { color: var(--muted); font-size: .9rem; }
+  code { font: .88em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+         background: var(--card); padding: 1px 5px; border-radius: 4px; }
+  pre { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px;
+        overflow-x: auto; font: .84rem/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  pre code { background: none; padding: 0; }
+  .tldr { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--accent);
+          border-radius: 8px; padding: 12px 16px; }
+  table { border-collapse: collapse; width: 100%; font-size: .93rem; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--card); }
+  .ok { color: var(--ok); font-weight: 600; } .bad { color: var(--bad); font-weight: 600; }
+  .warn { color: var(--warn); font-weight: 600; }
+  .term { background: var(--term-bg); color: var(--term-fg); border-radius: 8px; padding: 12px 14px;
+          font: .8rem/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-x: auto; white-space: pre; }
+  .term .hl { background: var(--term-hl-bg); color: var(--term-hl-fg); }
+  .term .red { color: var(--term-red); }
+  .callout { border: 1px solid var(--warn); border-radius: 8px; padding: 10px 14px; background: var(--card); }
+  details { margin: 8px 0; } summary { cursor: pointer; font-weight: 600; }
+  /* quiz */
+  .q { border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; margin: 14px 0; background: var(--card); }
+  .q p { margin: 0 0 8px; font-weight: 600; }
+  .q label { display: block; padding: 5px 8px; border-radius: 6px; cursor: pointer; }
+  .q label:hover { background: rgba(127,127,127,.12); }
+  .q input { margin-right: 8px; }
+  .q .why { display: none; margin-top: 8px; font-size: .92rem; color: var(--muted); }
+  .q.right { border-color: var(--ok); } .q.wrong { border-color: var(--bad); }
+  .q.checked .why { display: block; }
+  button { font: inherit; padding: 8px 18px; border-radius: 8px; border: 1px solid var(--accent);
+           background: var(--accent); color: #fff; cursor: pointer; }
+  button.secondary { background: transparent; color: var(--accent); margin-left: 8px; }
+  #result { margin-top: 14px; font-weight: 700; font-size: 1.1rem; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>TMD Emulator: story 1 (r1) report</h1>
+<p class="meta">Plan <code>main-plan-1-r1.md</code> · author: main (Claude) · 2026-09-20 · status: Completed</p>
+
+<div class="tldr">
+  <strong>In one paragraph.</strong> A new <code>TMDEmulator/</code> .NET 8 solution now exists with a full-screen, colored, arrow-key terminal
+  program and an xUnit project. It shows the menu tree from the story, and one function is real:
+  <em>Export MZMK Initialization Key</em> saves the hardcoded test key's public point as upper-case HEX in
+  <code>MZMK_Init_{FP8}{yyyyMMddHHmmss}.der</code>. The other three functions are placeholders.
+  Build is clean (0 warnings), <strong>161 unit tests pass</strong>, 40/40 real-terminal smoke checks pass on the Linux build, and the exported
+  values match <code>openssl</code>. <span class="warn">One thing I could not do: run the Windows <code>.exe</code> (this machine is Linux).</span>
+</div>
+
+<h2>1. Context and intuition</h2>
+<p>The real key exchange goes through a Thales TMD (a physical secure device). That is impractical for development, tests and training, so this
+program pretends to be one in a <em>controlled environment</em> only. Because of that, it is allowed to be less strict on security
+(the test private key is in source code, on purpose).</p>
+<p>The story is the first sub-story: get the shell of the emulator right (project, terminal UI, menus, config, one export function) so later
+stories only have to add screens. That drove one design rule: <strong>a screen is a small class that draws into a canvas and reacts to keys</strong>;
+the host owns layout, the status bar and navigation. Adding a menu entry later means adding one class and one line in
+<code>MenuDefinition</code>.</p>
+
+<h2>2. What was built</h2>
+<pre><code>TMDEmulator/
+├── TMDEmulator.sln
+├── src/TMDEmulator/                    (.NET 8 console app, assembly TMDEmulator)
+│   ├── Program.cs                      composition root only
+│   ├── tmdemulator.json                color config, copied next to the exe
+│   ├── Config/    ConfigLoader         json -> Theme, problems reported not thrown
+│   ├── Terminal/  ITerminal, ConsoleTerminal, ScreenBuffer, Theme
+│   ├── Ui/        ScreenHost (layout, key loop, status bar, screen stack)
+│   │              MenuScreen, PlaceholderScreen, ExportInitKeyScreen, MenuDefinition
+│   │              Canvas, SelectionList, LineEditor, TextUtil
+│   ├── Keys/      TestKeyPair (PKCS#8 PEM constant, TEST ONLY), EcKeyInspector
+│   └── Export/    MzmkInitExporter
+├── tests/TMDEmulator.Tests/            xUnit, 161 tests (~2,100 lines vs ~1,090 of product code)
+└── publish/win-x64/TMDEmulator.exe     self-contained single file (+ tmdemulator.json)
+    publish/linux-x64/TMDEmulator       same, for Linux</code></pre>
+<p>No third-party runtime library: the UI is a small renderer over <code>System.Console</code>; crypto is in-box .NET.
+Only test packages were added (<code>xunit</code>, <code>xunit.runner.visualstudio</code>, <code>Microsoft.NET.Test.Sdk</code>, <code>coverlet.collector</code>).</p>
+
+<h3>What the screen looks like</h3>
+<div class="term">┌─ TMD Emulator ─────────────────────────────────────────────────┐
+│ Main Menu › Remote MZMK Setup                                  │
+│                                                                │
+│<span class="hl">   Export MZMK Initialization Key                               </span>│
+│   Finalize Remote MZMK                                         │
+│   Uninstalling a MZMK                                          │
+│   Back                                                         │
+│                                                                │
+└────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│ ↑/↓ Navigate   Enter Select   Esc Back                         │
+│ <span class="red">Folder does not exist: /no/such/folder</span>                       │
+│                                                                │
+└────────────────────────────────────────────────────────────────┘</div>
+<p class="meta">Main frame on top, status frame at the bottom: legend first, errors in red under it. Highlight = grey row with black text.</p>
+
+<h3>How the export works</h3>
+<ol>
+  <li>The screen shows the curve (read from the key, currently <code>secp256r1</code>), the private scalar and the public point, all upper-case HEX.</li>
+  <li>The path prompt is pre-filled with the current absolute directory and is editable (←/→, Home/End, Backspace, Delete).</li>
+  <li>Enter validates the folder. Problems appear in red in the status bar and the prompt stays open.</li>
+  <li>If the target file exists you get <em>Overwrite it? Yes / No</em>. No (or Esc) goes back to the path prompt and writes nothing.</li>
+  <li>Saved: the file holds the public point HEX text (<code>04 || X || Y</code>, 130 chars), ASCII, no BOM, no newline. You return to the menu with a
+      "Saved: &lt;full path&gt;" message.</li>
+</ol>
+<p>The 8-character fingerprint in the file name is the first 8 hex chars of SHA-256 over the <strong>SPKI DER</strong> bytes. That is a different input
+from the file content (the raw point), exactly as the story words it.</p>
+
+<h2>3. Decisions I made and where you told me what to do</h2>
+<table>
+  <tr><th>Topic</th><th>Decision</th><th>Source</th></tr>
+  <tr><td>Curve</td><td>Read from the PKCS#8 key at runtime. The embedded dev key is secp256r1.</td><td>Your Q1 answer</td></tr>
+  <tr><td>"HEX" of public key</td><td><code>04||X||Y</code>, upper case.</td><td>Your Q2 answer</td></tr>
+  <tr><td>.NET 8 runtime</td><td>Run with <code>DOTNET_ROLL_FORWARD=LatestMajor</code>, environment only.</td><td>Your I1 answer</td></tr>
+  <tr><td class="warn">Public-key file content</td><td>I applied your Q2 answer to the <strong>file content too</strong> (point HEX), although the story text says "(SPKI) in HEX".
+      The fingerprint still uses SPKI DER. If the real TMD expects SPKI-DER-as-HEX in the file, this is the one line to change (<code>MzmkInitExporter.Write</code>).</td><td>My reading. Please confirm.</td></tr>
+  <tr><td>No 3rd-party UI library</td><td>Custom renderer over <code>System.Console</code>, 16 <code>ConsoleColor</code>s.</td><td>Plan assumption 3 (approved)</td></tr>
+  <tr><td>Config</td><td><code>tmdemulator.json</code> next to the exe; colors by <code>ConsoleColor</code> name; bad values fall back to defaults and are shown in red at startup.</td><td>Plan assumption 5</td></tr>
+  <tr><td>Menu behaviour</td><td>Up/Down wraps; Esc = Back; Esc on the top menu does nothing; Ctrl+C quits from anywhere.</td><td>Plan assumption 6</td></tr>
+  <tr><td>Missing output folder</td><td>Red error; folder is not created.</td><td>Plan assumption 8</td></tr>
+</table>
+
+<h3>Changes from the plan (all recorded in the plan's Implementation Notes)</h3>
+<ul>
+  <li>Added helper classes not in the sketch: <code>ScreenBuffer</code> (only changed cells are redrawn: no flicker, and tests can assert colors), <code>Canvas</code>, <code>SelectionList</code>, <code>TextUtil</code>.</li>
+  <li>The status frame has <strong>two</strong> wrapped message lines, not one. I noticed the "Saved: &lt;full path&gt;" text is about 94 characters and would have cut off the file name on an 80-column terminal.</li>
+  <li>Minimum terminal size 60×22; below it a red "Terminal too small" is shown. The rightmost column is deliberately unused (writing the last cell makes consoles scroll).</li>
+  <li>Menu labels are shown without the outline numbers (<code>1.</code>, <code>2.</code>) from the story.</li>
+  <li>SDK quirks: <code>dotnet new</code> on SDK 10 only offers <code>net10.0</code> and creates <code>.slnx</code>; I generated projects, then set <code>net8.0</code> by hand and forced a classic <code>.sln</code>.</li>
+</ul>
+
+<h2>4. Verification results</h2>
+<table>
+  <tr><th>#</th><th>Check</th><th>Result</th></tr>
+  <tr><td>V1</td><td>Clean Release build (<code>--no-incremental</code>)</td><td class="ok">0 errors, 0 warnings</td></tr>
+  <tr><td>V2</td><td>Unit tests + coverage</td><td class="ok">161 / 161 pass. Line coverage 92.8% overall; 452 of 453 lines (99.8%) excluding <code>Program</code> and <code>ConsoleTerminal</code>. The 1 missed line is the last-resort <code>"unknown"</code> curve-name fallback I could not trigger on Linux.</td></tr>
+  <tr><td>V3</td><td>Crypto cross-check with <code>openssl</code> on the file the real program exported</td><td class="ok">Point, private scalar, fingerprint (<code>11D3BE29</code>) and curve all match</td></tr>
+  <tr><td>V4</td><td><code>dotnet publish</code> win-x64 and linux-x64</td><td class="ok">Both produced; <code>TMDEmulator.exe</code> has a valid Windows (<code>MZ</code>) header</td></tr>
+  <tr><td>V5</td><td>Real Linux binary in a pseudo-terminal with real keystrokes and screen/color inspection</td><td class="ok">40 / 40 checks: menus, colors, navigation, export, validation in red, placeholders, Exit, Ctrl+C, resize, too-small, bad config, redirected stdin</td></tr>
+  <tr><td>V6</td><td>Story checklist (below)</td><td class="ok">All bullets met, with the Windows caveat</td></tr>
+  <tr><td>+</td><td>Mutation check: I broke the code on purpose (17 realistic bugs) to see if tests notice</td><td class="ok">17 of 17 broken versions were caught (wrong fingerprint length, no 0x04 prefix, 12-hour clock, UTC instead of local time, lower-case hex, silent overwrite, missing folder check, no menu wrap, swapped highlight colors, errors not red, Esc not going back, No still overwriting, errors not cleared, Ctrl+C ignored, last column used)</td></tr>
+</table>
+
+<details>
+  <summary>Story checklist (V6)</summary>
+  <table>
+    <tr><th>Story requirement</th><th>Met?</th><th>Evidence</th></tr>
+    <tr><td>Folder <code>TMDEmulator</code>, app + unit test project, project files, builds with dotnet cli</td><td class="ok">Yes</td><td>V1</td></tr>
+    <tr><td>Rich terminal: arrows, Enter, Esc = Back, main frame + status bar frame</td><td class="ok">Yes</td><td>V5, <code>ScreenHostTests</code></td></tr>
+    <tr><td>Black bg, white text, grey highlight with black text, configurable</td><td class="ok">Yes</td><td>V5 (pyte showed fg=black bg=grey), <code>ConfigLoaderTests</code></td></tr>
+    <tr><td>Legend in status bar; validation + errors in RED under it</td><td class="ok">Yes</td><td>V5 (row 27, red), <code>ExportFlowTests</code></td></tr>
+    <tr><td>1st-level menu at startup; menu tree as specified</td><td class="ok">Yes</td><td>V5, <code>ScreenHostTests</code></td></tr>
+    <tr><td>Constant class with hardcoded EC PKCS#8 PEM keypair</td><td class="ok">Yes</td><td><code>TestKeyPair</code>, V3</td></tr>
+    <tr><td>Export: show curve/private/public; folder prompt with default; fingerprint; file name; HEX in <code>.der</code>; overwrite prompt; back to menu</td><td class="ok">Yes</td><td>V3, V5, <code>ExportFlowTests</code></td></tr>
+    <tr><td>View Keys / Finalize / Uninstall are placeholders</td><td class="ok">Yes</td><td>V5, <code>ScreenHostTests</code></td></tr>
+    <tr><td>Exe runnable on Win 11</td><td class="warn">Built, not run</td><td>V4 only; see section 5</td></tr>
+    <tr><td>Unit tests cover all classes, all pass</td><td class="ok">Yes</td><td>V2</td></tr>
+  </table>
+</details>
+
+<h2>5. What was skipped, and what I could not verify</h2>
+<div class="callout">
+<ul>
+  <li><strong>Not run on Windows 11.</strong> I only have Linux here. The exe is built and structurally valid, but nobody has seen it draw on a Windows console. Please do the short manual check below.</li>
+  <li><strong>Tests ran on the .NET 10 runtime</strong> against <code>net8.0</code> binaries (roll-forward, as you approved). A real .NET 8 runtime was not available.</li>
+  <li><strong><code>ConsoleTerminal</code> and <code>Program</code> have no unit tests.</strong> They are thin wrappers over <code>System.Console</code> and need a real terminal; the smoke test covers them on Linux only.</li>
+  <li><strong>Windows and unusual-terminal behaviours are untested:</strong> the fallbacks that map a curve OID/friendly name (Windows reports them differently), a code page without box-drawing characters, and very old consoles.</li>
+  <li>The published exe is <strong>self-contained (~67 MB), untrusted (unsigned) and not trimmed</strong>. There is no installer or CI pipeline (out of scope).</li>
+  <li>The project folder is not a git repository and I added no <code>.gitignore</code>. <code>publish/</code>, <code>bin/</code> and <code>obj/</code> are build output.</li>
+  <li>Out of scope by the story: real key storage, finalize/uninstall logic, View Keys content.</li>
+</ul>
+</div>
+
+<h3>Manual check on Windows 11 (about 2 minutes)</h3>
+<ol>
+  <li>Run <code>publish\win-x64\TMDEmulator.exe</code> in Windows Terminal (and once in classic conhost). Menu appears with a grey highlight row and black text on a black background.</li>
+  <li>↑/↓ moves and wraps. Enter opens <em>Remote MZMK Setup</em>; Esc goes back.</li>
+  <li>Open <em>Export MZMK Initialization Key</em>. The box-drawing characters and ↑/↓/←/→ in the legend render properly (if you see <code>?</code>, tell me).</li>
+  <li>Press Enter to save; check the new <code>MZMK_Init_11D3BE29…der</code> file holds 130 hex characters starting with <code>04</code>.</li>
+  <li>Type a folder that does not exist: a red message appears under the legend.</li>
+  <li>Shrink and grow the window: the layout redraws; Ctrl+C exits and leaves the console clean.</li>
+</ol>
+
+<h2>6. How to build, test and run</h2>
+<pre><code># from the project root
+cd TMDEmulator
+dotnet build TMDEmulator.sln
+dotnet test  TMDEmulator.sln                 # on this box first: export DOTNET_ROLL_FORWARD=LatestMajor
+dotnet run --project src/TMDEmulator
+
+# release exe (Windows 11), single self-contained file
+dotnet publish src/TMDEmulator/TMDEmulator.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o publish/win-x64</code></pre>
+<p>To change colors edit <code>tmdemulator.json</code> next to the exe, for example <code>{ "colors": { "background": "DarkBlue" } }</code>.
+Valid names are the <code>System.ConsoleColor</code> names. Wrong values are shown in red at startup and the default is used.</p>
+
+<h2>7. Lesson captured</h2>
+<p><code>.agents/project-kb/src/main-kb-1-r1.md</code>: on this machine the .NET 10 SDK only scaffolds <code>net10.0</code>, defaults to <code>.slnx</code>, and cannot run
+<code>net8.0</code> output without roll-forward. (<code>kb-index.md</code> is not touched; that is the KB agent's job.)</p>
+
+<h2>8. Quiz: you must pass this (6 of 8) before treating the change as understood</h2>
+<form id="quiz" onsubmit="return false">
+
+<div class="q" data-answer="b">
+  <p>1. What text does the saved <code>MZMK_Init_….der</code> file contain?</p>
+  <label><input type="radio" name="q1" value="a">Binary SPKI DER bytes</label>
+  <label><input type="radio" name="q1" value="b">Upper-case HEX text of the public point <code>04||X||Y</code> (130 characters for P-256)</label>
+  <label><input type="radio" name="q1" value="c">Lower-case HEX of the private scalar</label>
+  <label><input type="radio" name="q1" value="d">The PEM text of the public key</label>
+  <div class="why">The <code>.der</code> extension is misleading by design (TMD-specific). Per your Q2 answer it is HEX text of the point. I applied that to the file too, and asked you to confirm.</div>
+</div>
+
+<div class="q" data-answer="c">
+  <p>2. What is the 8-character fingerprint in the file name computed from?</p>
+  <label><input type="radio" name="q2" value="a">The first 8 characters of the file content</label>
+  <label><input type="radio" name="q2" value="b">SHA-256 of the private key</label>
+  <label><input type="radio" name="q2" value="c">First 8 hex chars of SHA-256 over the SubjectPublicKeyInfo (SPKI) DER bytes</label>
+  <label><input type="radio" name="q2" value="d">The current time</label>
+  <div class="why">The fingerprint input (SPKI DER) is different from the file content (raw point). For the embedded key it is <code>11D3BE29</code>; I confirmed it with openssl.</div>
+</div>
+
+<div class="q" data-answer="a">
+  <p>3. How does the program know the curve to display?</p>
+  <label><input type="radio" name="q3" value="a">It reads it from the PKCS#8 key itself; swapping the PEM to another named curve needs no other code change</label>
+  <label><input type="radio" name="q3" value="b">A constant <code>"secp256r1"</code> in <code>MenuDefinition</code></label>
+  <label><input type="radio" name="q3" value="c">From <code>tmdemulator.json</code></label>
+  <label><input type="radio" name="q3" value="d">It asks openssl at runtime</label>
+  <div class="why">Your Q1 answer. Tests use a generated P-384 key to prove the name and lengths follow the key. Explicit-parameter keys are rejected with a clear message.</div>
+</div>
+
+<div class="q" data-answer="d">
+  <p>4. The user types a folder that does not exist and presses Enter. What happens?</p>
+  <label><input type="radio" name="q4" value="a">The folder is created and the file saved</label>
+  <label><input type="radio" name="q4" value="b">The program exits with an error</label>
+  <label><input type="radio" name="q4" value="c">A pop-up asks whether to create it</label>
+  <label><input type="radio" name="q4" value="d">A red message appears under the legend in the status bar, nothing is created, and the prompt stays open</label>
+  <div class="why">Plan assumption 8. The message is cleared by the next key press so the user can simply correct the path.</div>
+</div>
+
+<div class="q" data-answer="b">
+  <p>5. On the "File already exists. Overwrite it?" question the user answers <strong>No</strong>. What happens?</p>
+  <label><input type="radio" name="q5" value="a">The program returns to the main menu</label>
+  <label><input type="radio" name="q5" value="b">The old file is untouched and you are back at the path prompt to choose another folder</label>
+  <label><input type="radio" name="q5" value="c">A new file with a different name is written</label>
+  <label><input type="radio" name="q5" value="d">The old file is deleted</label>
+  <div class="why">Esc on the question also means No. Yes overwrites the whole file (it is truncated, not appended) and returns to the menu.</div>
+</div>
+
+<div class="q" data-answer="c">
+  <p>6. Why does the program never draw in the rightmost terminal column?</p>
+  <label><input type="radio" name="q6" value="a">To leave room for a scroll bar</label>
+  <label><input type="radio" name="q6" value="b">The frame is wider than the window otherwise</label>
+  <label><input type="radio" name="q6" value="c">Writing to the very last cell of the window makes consoles scroll, which would corrupt the layout</label>
+  <label><input type="radio" name="q6" value="d">Windows 11 reserves it</label>
+  <div class="why">The fake terminal used in the tests throws if anything writes past that column, so this rule is enforced by tests.</div>
+</div>
+
+<div class="q" data-answer="b">
+  <p>7. Which statement about testing is TRUE?</p>
+  <label><input type="radio" name="q7" value="a">The Windows exe was run and checked by me</label>
+  <label><input type="radio" name="q7" value="b">The tests ran on the .NET 10 runtime via roll-forward; the Windows exe was built but not run; <code>ConsoleTerminal</code> and <code>Program</code> are checked only by a smoke test</label>
+  <label><input type="radio" name="q7" value="c">Everything, including <code>ConsoleTerminal</code>, has unit tests</label>
+  <label><input type="radio" name="q7" value="d">Only the crypto code was tested</label>
+  <div class="why">Section 5 lists these limits. The Windows 11 manual check in that section closes the biggest gap.</div>
+</div>
+
+<div class="q" data-answer="a">
+  <p>8. What is the <code>ScreenBuffer</code> for?</p>
+  <label><input type="radio" name="q8" value="a">Each frame is drawn off-screen and only changed cells are written to the terminal, which avoids flicker and lets tests assert on characters and colors</label>
+  <label><input type="radio" name="q8" value="b">It stores the exported keys</label>
+  <label><input type="radio" name="q8" value="c">It caches the config file</label>
+  <label><input type="radio" name="q8" value="d">It encrypts what is shown on screen</label>
+  <div class="why">It was not in the original plan sketch; I added it because a rich terminal UI that repaints everything on each key flickers, and the tests need to read back colors.</div>
+</div>
+
+<p>
+  <button type="button" id="check">Check answers</button>
+  <button type="button" id="reset" class="secondary">Reset</button>
+</p>
+<div id="result" role="status" aria-live="polite"></div>
+</form>
+
+</main>
+<script>
+(function () {
+  var qs = document.querySelectorAll('.q');
+  var PASS = 6;
+  document.getElementById('check').addEventListener('click', function () {
+    var score = 0, unanswered = 0;
+    qs.forEach(function (q) {
+      var picked = q.querySelector('input:checked');
+      q.classList.remove('right', 'wrong');
+      if (!picked) { unanswered++; return; }
+      q.classList.add('checked');
+      if (picked.value === q.getAttribute('data-answer')) { score++; q.classList.add('right'); }
+      else { q.classList.add('wrong'); }
+    });
+    var out = document.getElementById('result');
+    if (unanswered) { out.textContent = 'Please answer all ' + qs.length + ' questions (' + unanswered + ' left).'; out.style.color = 'var(--warn)'; return; }
+    var pass = score >= PASS;
+    out.textContent = (pass ? 'PASS' : 'NOT YET') + ': ' + score + ' / ' + qs.length + ' (pass mark ' + PASS + ')';
+    out.style.color = pass ? 'var(--ok)' : 'var(--bad)';
+  });
+  document.getElementById('reset').addEventListener('click', function () {
+    qs.forEach(function (q) {
+      q.classList.remove('right', 'wrong', 'checked');
+      q.querySelectorAll('input').forEach(function (i) { i.checked = false; });
+    });
+    document.getElementById('result').textContent = '';
+  });
+})();
+</script>
+</body>
+</html>
