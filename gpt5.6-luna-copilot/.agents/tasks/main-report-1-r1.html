@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>TMD Emulator - Completion Report</title>
+  <style>
+    body { font-family: Segoe UI, Arial, sans-serif; line-height: 1.5; margin: 2rem; color: #202124; }
+    code { background: #f1f3f4; padding: 0.1rem 0.3rem; }
+    li { margin: 0.35rem 0; }
+    .pass { color: #137333; font-weight: 600; }
+    .note { background: #fff8e1; border-left: 4px solid #f9ab00; padding: 0.7rem 1rem; }
+  </style>
+</head>
+<body>
+  <h1>TMD Emulator - Completion Report</h1>
+  <p><strong>Request:</strong> story-1-r1</p>
+  <p><strong>Plan:</strong> main-plan-1-r1</p>
+  <p><strong>Status:</strong> Completed</p>
+
+  <h2>Delivered</h2>
+  <ul>
+    <li>Added the root <code>TMDEmulator.sln</code> solution, a .NET 8 console application, and an xUnit test project.</li>
+    <li>Implemented the two-frame interactive terminal UI with configurable colors, highlighted selection, navigation legend, red status errors, nested menus, Back, Exit, and deferred-page placeholders.</li>
+    <li>Embedded a randomly generated development-only <code>secp256r1</code> PKCS#8 PEM fixture.</li>
+    <li>Implemented key-detail display, SPKI DER fingerprinting, uppercase SPKI HEX output, timestamped file naming, existing-directory validation, and overwrite confirmation.</li>
+    <li>Added configuration loading from <code>appsettings.json</code> with validated built-in defaults.</li>
+    <li>Added usage documentation covering build, test, run, publish, configuration, and the TMD-specific HEX-with-<code>.der</code> format.</li>
+  </ul>
+
+  <h2>Verification</h2>
+  <ul>
+    <li class="pass"><code>dotnet test TMDEmulator.sln --configuration Release --no-restore</code>: 10 passed, 0 failed.</li>
+    <li class="pass"><code>dotnet build TMDEmulator.sln --configuration Release --no-restore</code>: 0 warnings, 0 errors.</li>
+    <li class="pass"><code>dotnet publish TMDEmulator\TMDEmulator.csproj --configuration Release --runtime win-x64 --self-contained false</code>: succeeded.</li>
+    <li class="pass">Published output contains <code>TMDEmulator.exe</code>, framework-dependent runtime metadata, and <code>appsettings.json</code>.</li>
+    <li>Automated non-interactive launch validation confirmed that the executable refuses redirected input/output with an explicit message. Full keyboard-driven smoke testing requires a real interactive terminal and was not run in this headless session.</li>
+  </ul>
+
+  <h2>Notes</h2>
+  <div class="note">
+    The published executable is framework-dependent as approved and therefore
+    requires the .NET 8 runtime on the Windows 11 target machine. The embedded
+    key is for controlled development/training use only and must not be used as
+    production key material.
+  </div>
+
+  <h2>Quiz</h2>
+  <ol>
+    <li>Why does the generated file use a <code>.der</code> extension even though its contents are HEX text?</li>
+    <li>Which exact bytes are hashed to create the eight-character fingerprint?</li>
+    <li>What must be installed on a target machine for the published executable to run?</li>
+  </ol>
+</body>
+</html>
